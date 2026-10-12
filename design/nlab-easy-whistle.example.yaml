@@ -1,0 +1,46 @@
+version: 1
+whistle:
+  url: http://127.0.0.1:8899
+machines:
+  - jacobzy
+  - zhangxiaofei
+  - lutong
+  - nlab202608
+  - sandboxjacobzy
+  - sandboxzhangyuanzy
+rules:
+  - name: ""
+    enabled: true
+    patterns: ['*/nlab_recycle_merchant', '*/u/nlab_recycle_merchant']
+    environment: test
+    machine: jacobzy
+  - name: ""
+    enabled: true
+    patterns: [nlabstore.zhuanspirit.com, bmadmin.zhuanspirit.com, app.zhuanzhuan.com]
+    environment: test
+    machine: zhangxiaofei
+  - name: ""
+    enabled: true
+    patterns: ['*/cycling_recycle_manage', '*/u/cycling_recycle_manage']
+    environment: test
+    machine: zhangxiaofei
+  - name: ""
+    enabled: true
+    patterns: ['*/interest_consign', '*/u/interest_consign']
+    environment: test
+    machine: jacobzy
+  - name: ""
+    enabled: false
+    patterns: ['*/cycling_recycle', '*/u/cycling_recycle']
+    environment: test
+    machine: lutong
+  - name: ""
+    enabled: false
+    patterns: ['*/sale', '*/u/cyclingstore_admin_sale']
+    environment: test
+    machine: zhangxiaofei
+  - name: ""
+    enabled: false
+    patterns: ['*/nlab_recycle_merchant', '*/u/nlab_recycle_merchant']
+    environment: sandbox
+    machine: sandboxjacobzy

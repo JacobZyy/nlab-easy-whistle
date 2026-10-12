@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Allow the local Whistle bridge and YAML export through a user-selected save dialog in the main window.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "allow-whistle-request",
+    "allow-export-yaml"
+  ]
+}

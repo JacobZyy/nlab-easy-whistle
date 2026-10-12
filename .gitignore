@@ -1,0 +1,15 @@
+# Local agent and workflow state
+/.agents/
+/.codex/
+/.jth/
+
+.DS_Store
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+*.log
