@@ -200,7 +200,7 @@ async function applyRules() {
 
     <RulesTable :rules="config.rules" :machines="config.machines" :disabled="busy" @change="changeRule" @move="moveRule" @edit="openRule" @remove="removeRule" @copy="copyRules" @add-machine="openMachine" />
 
-    <footer class="mt-5 flex items-center justify-between gap-4">
+    <footer class="mt-5 flex items-center justify-between gap-4 rounded-field bg-base-100/85 px-4 py-3">
       <button class="btn btn-ghost h-auto min-h-0 p-0 text-xs font-normal text-base-content/75 hover:bg-transparent" :disabled="busy" aria-haspopup="dialog" @click="openConnection">Whistle：<span class="font-mono">{{ config.whistle.url }}</span><span class="ml-1 underline underline-offset-2">设置</span></button>
       <button class="btn btn-primary btn-sm px-5 font-medium" :disabled="busy" :aria-busy="busy" @click="applyRules">{{ busy ? '应用中…' : '应用' }}</button>
     </footer>

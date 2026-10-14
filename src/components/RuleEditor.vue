@@ -76,7 +76,22 @@ defineExpose({ selectMachine });
             <div><label for="rule-environment" class="mb-2 block text-xs font-medium">代理环境</label><select id="rule-environment" v-model="draft.environment" class="select select-sm w-full"><option value="test">测试环境</option><option value="sandbox">沙箱环境</option></select></div>
             <div><label for="rule-machine" class="mb-2 block text-xs font-medium">测试机</label><select id="rule-machine" ref="machineSelect" class="select select-sm w-full" @change="setMachine"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === draft.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select></div>
           </div>
-          <label class="mt-5 flex w-fit cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium" :class="draft.enabled ? 'border-success/40 bg-success/10' : 'border-neutral/30 bg-neutral/8'"><input v-model="draft.enabled" type="checkbox" class="toggle toggle-md toggle-success" /><span class="badge badge-sm gap-1 font-semibold" :class="draft.enabled ? 'badge-success' : 'badge-neutral'">{{ draft.enabled ? '✓ 已启用' : 'Ⅱ 已禁用' }}</span></label>
+          <button
+            type="button"
+            class="btn btn-sm mt-5 min-w-24 gap-2 font-semibold"
+            :class="draft.enabled ? 'btn-success' : 'btn-neutral'"
+            :disabled="disabled"
+            :aria-pressed="draft.enabled"
+            aria-label="启用这条规则"
+            :title="draft.enabled ? '点击禁用' : '点击启用'"
+            @click="draft.enabled = !draft.enabled"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path v-if="draft.enabled" d="m5 12 4 4L19 6" />
+              <path v-else d="M8 5v14M16 5v14" />
+            </svg>
+            {{ draft.enabled ? '已启用' : '已禁用' }}
+          </button>
           <p v-if="error" class="mt-3 text-xs text-error" role="alert">{{ error }}</p>
           <div class="modal-action mt-6"><button type="button" class="btn btn-sm" @click="dialog?.close()">取消</button><button class="btn btn-sm" type="submit">保存规则</button></div>
         </fieldset>

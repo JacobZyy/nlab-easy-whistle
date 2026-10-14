@@ -85,9 +85,9 @@ function moveWithKeyboard(index: number, event: KeyboardEvent) {
   void moveRule(index, index + (event.key === 'ArrowUp' ? -1 : 1));
 }
 
-function setEnabled(index: number, event: Event) {
+function toggleEnabled(index: number) {
   const rule = props.rules[index];
-  if (rule && !props.disabled) emit('change', index, { ...rule, enabled: (event.target as HTMLInputElement).checked });
+  if (rule && !props.disabled) emit('change', index, { ...rule, enabled: !rule.enabled });
 }
 
 function setEnvironment(index: number, event: Event) {
@@ -116,30 +116,27 @@ async function removeRule(index: number) {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
+  <div class="overflow-x-auto rounded-lg border border-base-300 backdrop-blur-sm">
     <p id="rule-sort-help" class="sr-only">拖动排序手柄调整规则顺序，也可聚焦手柄后按上、下方向键移动。</p>
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
     <table ref="table" class="table w-full table-fixed" aria-label="代理规则配置">
-      <colgroup><col class="w-[48px]" /><col class="w-[136px]" /><col class="w-[144px]" /><col /><col class="w-[156px]" /><col class="w-[205px]" /><col class="w-[152px]" /></colgroup>
-      <thead class="bg-base-200/80 text-xs font-normal text-base-content/75">
+      <colgroup><col class="w-[48px]" /><col class="w-[112px]" /><col class="w-[144px]" /><col /><col class="w-[156px]" /><col class="w-[205px]" /><col class="w-[152px]" /></colgroup>
+      <thead class="text-xs font-normal text-base-content/75">
         <tr><th class="px-2 py-3 font-normal"><span class="sr-only">排序</span></th><th class="px-2 font-normal">状态</th><th class="font-normal">名称</th><th class="font-normal">请求匹配规则</th><th class="font-normal">代理环境</th><th class="font-normal">测试机</th><th class="pr-5 text-right font-normal">操作</th></tr>
       </thead>
       <tbody>
-        <tr v-for="(rule, index) in rules" :key="index" :data-rule-index="index" class="border-base-300/70 transition-colors" :class="{ 'bg-success/10 hover:bg-success/15': rule.enabled, 'bg-neutral/8 hover:bg-neutral/12': !rule.enabled, 'outline-2 -outline-offset-2 outline-primary': dropIndex === index && draggedIndex !== index }">
+        <tr v-for="(rule, index) in rules" :key="index" :data-rule-index="index" class="border-base-300/70" :class="{ 'outline-2 -outline-offset-2 outline-primary': dropIndex === index && draggedIndex !== index }">
           <td class="border-l-4 px-1.5 py-4 align-middle" :class="rule.enabled ? 'border-l-success' : 'border-l-neutral'">
             <button type="button" data-drag-handle class="btn btn-ghost btn-sm btn-square touch-none select-none [-webkit-user-select:none] text-base-content/70" :class="draggedIndex === index ? 'cursor-grabbing bg-base-300' : 'cursor-grab'" :disabled="disabled || rules.length < 2" :aria-label="`调整规则 ${index + 1} 的顺序：${rule.name || rule.patterns[0]}，拖动或按上、下方向键排序`" aria-describedby="rule-sort-help" title="拖动排序，或按上、下方向键移动" @pointerdown="startDrag(index, $event)" @pointermove="dragOver" @pointerup="finishDrag" @pointercancel="cancelDrag" @lostpointercapture="cancelDrag" @keydown="moveWithKeyboard(index, $event)">
               <svg aria-hidden="true" viewBox="0 0 16 20" class="h-5 w-4 fill-current"><circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" /><circle cx="5" cy="10" r="1.5" /><circle cx="11" cy="10" r="1.5" /><circle cx="5" cy="16" r="1.5" /><circle cx="11" cy="16" r="1.5" /></svg>
             </button>
           </td>
           <td class="px-2 py-4 align-middle">
-            <div class="flex items-center gap-2">
-              <span class="badge badge-sm shrink-0 gap-1 px-2 font-semibold" :class="rule.enabled ? 'badge-success' : 'badge-neutral'">
-                <svg v-if="rule.enabled" aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3 fill-none stroke-current" stroke-width="2.5"><path d="m3 8 3 3 7-7" /></svg>
-                <svg v-else aria-hidden="true" viewBox="0 0 16 16" class="h-3 w-3 fill-current"><rect x="4" y="3" width="3" height="10" rx="1" /><rect x="9" y="3" width="3" height="10" rx="1" /></svg>
-                {{ rule.enabled ? '已启用' : '已禁用' }}
-              </span>
-              <input type="checkbox" class="toggle toggle-md toggle-success shrink-0" :checked="rule.enabled" :disabled="disabled" :aria-label="`启用规则 ${index + 1}：${rule.patterns[0]}`" @change="setEnabled(index, $event)" />
-            </div>
+            <button type="button" class="btn btn-sm min-w-24 gap-2 font-semibold" :class="rule.enabled ? 'btn-success' : 'btn-neutral'" :disabled="disabled" :aria-pressed="rule.enabled" :aria-label="`启用规则 ${index + 1}：${rule.patterns[0]}`" :title="rule.enabled ? '点击禁用' : '点击启用'" @click="toggleEnabled(index)">
+              <svg v-if="rule.enabled" aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 fill-none stroke-current" stroke-width="2.5"><path d="m3 8 3 3 7-7" /></svg>
+              <svg v-else aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 fill-current"><rect x="4" y="3" width="3" height="10" rx="1" /><rect x="9" y="3" width="3" height="10" rx="1" /></svg>
+              {{ rule.enabled ? '已启用' : '已禁用' }}
+            </button>
           </td>
           <td class="break-words py-4 align-middle text-xs" :class="{ 'text-base-content/75': !rule.enabled }">{{ rule.name }}</td>
           <td class="py-4 align-middle"><div class="space-y-0.5" :class="{ 'text-base-content/75': !rule.enabled }"><code v-for="pattern in rule.patterns" :key="pattern" class="block break-all font-mono text-[11px] leading-[1.7]">{{ pattern }}</code></div></td>
