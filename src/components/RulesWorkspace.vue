@@ -60,6 +60,15 @@ function changeRule(index: number, rule: ProxyRule) {
   if (!busy.value) config.value.rules[index] = validateRule(rule, config.value.machines);
 }
 
+function moveRule(from: number, to: number) {
+  if (busy.value || from === to) return;
+  const rules = config.value.rules;
+  const rule = rules[from];
+  if (!rule || to < 0 || to >= rules.length) return;
+  rules.splice(from, 1);
+  rules.splice(to, 0, rule);
+}
+
 function removeRule(index: number) {
   if (busy.value) return;
   config.value.rules.splice(index, 1);
@@ -178,18 +187,18 @@ async function applyRules() {
 </script>
 
 <template>
-  <main class="mx-auto max-w-[1176px] px-8 pt-12 pb-10 antialiased">
-    <header class="mb-7 flex items-center justify-between gap-5">
-      <h1 class="text-xl font-semibold tracking-tight">NLab Easy Whistle</h1>
+  <main class="mx-auto max-w-[1280px] px-8 pt-8 pb-10 antialiased">
+    <header class="mb-6 flex items-center justify-between gap-5 rounded-box border-b-4 border-secondary bg-neutral px-6 py-5 text-neutral-content">
+      <h1 class="flex items-center gap-3 text-xl font-semibold tracking-tight"><img src="/favicon.png" alt="" class="size-9 rounded-field" />NLab Easy Whistle</h1>
       <div class="flex items-center gap-2">
         <button class="btn btn-sm bg-base-100 font-normal" :disabled="busy" @click="chooseImport">导入 YAML</button>
         <button class="btn btn-sm bg-base-100 font-normal" :disabled="busy || exporting" @click="exportConfig">导出 YAML</button>
-        <button ref="addButton" class="btn btn-sm ml-1 font-medium" :disabled="busy" aria-haspopup="dialog" @click="openRule()">＋ 新增规则</button>
+        <button ref="addButton" class="btn btn-secondary btn-sm ml-1 font-semibold" :disabled="busy" aria-haspopup="dialog" @click="openRule()">＋ 新增规则</button>
         <input ref="importFile" type="file" accept=".yaml,.yml,text/yaml,application/yaml" class="hidden" aria-label="选择 YAML 配置文件" :disabled="busy" @change="readImport" />
       </div>
     </header>
 
-    <RulesTable :rules="config.rules" :machines="config.machines" :disabled="busy" @change="changeRule" @edit="openRule" @remove="removeRule" @copy="copyRules" @add-machine="openMachine" />
+    <RulesTable :rules="config.rules" :machines="config.machines" :disabled="busy" @change="changeRule" @move="moveRule" @edit="openRule" @remove="removeRule" @copy="copyRules" @add-machine="openMachine" />
 
     <footer class="mt-5 flex items-center justify-between gap-4">
       <button class="btn btn-ghost h-auto min-h-0 p-0 text-xs font-normal text-base-content/75 hover:bg-transparent" :disabled="busy" aria-haspopup="dialog" @click="openConnection">Whistle：<span class="font-mono">{{ config.whistle.url }}</span><span class="ml-1 underline underline-offset-2">设置</span></button>
