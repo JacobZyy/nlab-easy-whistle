@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dump, JSON_SCHEMA, load } from 'js-yaml';
-import { defaultConfig, generateRules, normalizeMachine, normalizePattern, normalizeUrl, validateConfig } from '../src/rule-config';
+import { defaultConfig, generateRules, normalizeMachine, normalizePattern, normalizeUrl, validateConfig, validateRule } from '../src/rule-config';
 
 describe('规则配置', () => {
   it('保留原始路径、多域名、各行测试机与注释状态', () => {
@@ -21,6 +21,50 @@ describe('规则配置', () => {
     expect(validateConfig({ ...source, rules: [] }).rules).toEqual([]);
     expect(() => validateConfig({ ...source, version: 2 })).toThrow('version: 1');
     expect(() => validateConfig({ ...source, machines: ['missing'] })).toThrow('machines');
+  });
+
+  it('本地规则无需测试机，固定转发到 127.0.0.1 的自定义端口，YAML 往返保留端口', () => {
+    const source = defaultConfig();
+    const rule = validateRule({
+      enabled: true,
+      patterns: ['*/u/nlab-manage', '*/nlab-manage'],
+      environment: 'local',
+      port: 8000,
+    }, source.machines);
+    source.rules = [rule];
+    const restored = validateConfig(load(dump(source), { schema: JSON_SCHEMA }));
+    expect(restored).toEqual(source);
+    expect(generateRules(restored)).toBe('host://127.0.0.1:8000 */u/nlab-manage */nlab-manage');
+    restored.rules[0]!.port = 5173;
+    expect(generateRules(restored)).toBe('host://127.0.0.1:5173 */u/nlab-manage */nlab-manage');
+    restored.rules[0]!.enabled = false;
+    expect(generateRules(restored)).toBe('# host://127.0.0.1:5173 */u/nlab-manage */nlab-manage');
+  });
+
+  it.each([1, 65535])('接受本地端口边界：%s', (port) => {
+    const source = defaultConfig();
+    expect(validateRule({ ...source.rules[0], environment: 'local', port }, source.machines).port).toBe(port);
+  });
+
+  it.each([undefined, null, '', '8000', 0, -1, 65536, 8000.5, NaN, Infinity, '8000 reqHeaders://x=y'])('拒绝非法本地端口：%s', (port) => {
+    const source = defaultConfig();
+    expect(() => validateRule({ ...source.rules[0], environment: 'local', port }, source.machines)).toThrow('本地端口必须是');
+  });
+
+  it.each(['test', 'sandbox'])('远端环境仍要求测试机：%s', (environment) => {
+    const source = defaultConfig();
+    expect(() => validateRule({ ...source.rules[0], environment, machine: '' }, source.machines)).toThrow('测试机名称不能为空');
+    expect(() => validateRule({ ...source.rules[0], environment, machine: 'unknown' }, source.machines)).toThrow('machines');
+  });
+
+  it.each(['test', 'sandbox'])('切换到 %s 再切回本地仍保留自定义端口', (environment) => {
+    const source = defaultConfig();
+    const local = validateRule({ ...source.rules[0], environment: 'local', port: 5173 }, source.machines);
+    const remote = validateRule({ ...local, environment, machine: source.machines[0] }, source.machines);
+    expect(remote.port).toBe(5173);
+    expect(generateRules({ ...source, rules: [remote] })).not.toContain(':5173');
+    const restored = validateRule({ ...remote, environment: 'local' }, source.machines);
+    expect(restored.port).toBe(5173);
   });
 
   it('旧 YAML 缺少名称时保持空白，名称往返保存但不改变 Whistle 文本', () => {

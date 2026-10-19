@@ -44,3 +44,8 @@ rules:
     patterns: ['*/nlab_recycle_merchant', '*/u/nlab_recycle_merchant']
     environment: sandbox
     machine: sandboxjacobzy
+  - name: 本地管理端
+    enabled: false
+    patterns: ['*/u/nlab-manage', '*/nlab-manage']
+    environment: local
+    port: 8000

@@ -8,7 +8,7 @@ export function tokenizeRule(text: string): RuleToken[] {
   if (/^\s*#/u.test(text)) return [{ text, kind: 'comment' }];
 
   const tokens: RuleToken[] = [];
-  const host = text.match(/^(host:\/\/)(\d{1,3}(?:\.\d{1,3}){3})(?=\s|$)/u);
+  const host = text.match(/^(host:\/\/)(\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?)(?=\s|$)/u);
   let cursor = 0;
   if (host) {
     tokens.push({ text: host[1]!, kind: 'operator' }, { text: host[2]!, kind: 'address' });

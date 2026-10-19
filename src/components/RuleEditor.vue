@@ -1,6 +1,6 @@
 <script setup lang="ts" vapor>
 import { nextTick, reactive, shallowRef, useTemplateRef, watch } from 'vue';
-import { validateRule, type Environment, type ProxyRule } from '../rule-config';
+import { ENVIRONMENTS, validateRule, type Environment, type ProxyRule } from '../rule-config';
 
 const props = defineProps<{ open: boolean; rule: ProxyRule | null; machines: string[]; disabled: boolean }>();
 const emit = defineEmits<{ save: [rule: ProxyRule]; close: []; addMachine: [] }>();
@@ -8,7 +8,7 @@ const dialog = useTemplateRef<HTMLDialogElement>('dialog');
 const patternsInput = useTemplateRef<HTMLTextAreaElement>('patternsInput');
 const machineSelect = useTemplateRef<HTMLSelectElement>('machineSelect');
 const error = shallowRef('');
-const draft = reactive({ name: '', enabled: true, patterns: '', environment: 'test' as Environment, machine: '' });
+const draft = reactive({ name: '', enabled: true, patterns: '', environment: 'test' as Environment, machine: '', port: 8000 });
 
 watch(() => props.open, async (open) => {
   if (!open) {
@@ -20,7 +20,8 @@ watch(() => props.open, async (open) => {
   draft.enabled = rule?.enabled ?? true;
   draft.patterns = rule?.patterns.join('\n') ?? '';
   draft.environment = rule?.environment ?? 'test';
-  draft.machine = rule?.machine ?? props.machines[0] ?? '';
+  draft.machine = rule?.machine || props.machines[0] || '';
+  draft.port = rule?.port ?? 8000;
   error.value = '';
   await nextTick();
   if (props.open && dialog.value && !dialog.value.open) {
@@ -53,6 +54,7 @@ function saveRule() {
       patterns: draft.patterns.split(/\r?\n/u).map((pattern) => pattern.trim()).filter(Boolean),
       environment: draft.environment,
       machine: draft.machine,
+      port: draft.port,
     }, props.machines));
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '规则无法保存。';
@@ -73,8 +75,9 @@ defineExpose({ selectMachine });
           <label for="rule-patterns" class="mt-4 mb-2 block text-xs font-medium">请求匹配规则 <span class="font-normal text-base-content/75">每行一项</span></label>
           <textarea id="rule-patterns" ref="patternsInput" v-model="draft.patterns" class="textarea h-36 w-full resize-y font-mono text-xs leading-6" placeholder="*/your_service&#10;*/u/your_service" required></textarea>
           <div class="mt-4 grid grid-cols-2 gap-4">
-            <div><label for="rule-environment" class="mb-2 block text-xs font-medium">代理环境</label><select id="rule-environment" v-model="draft.environment" class="select select-sm w-full"><option value="test">测试环境</option><option value="sandbox">沙箱环境</option></select></div>
-            <div><label for="rule-machine" class="mb-2 block text-xs font-medium">测试机</label><select id="rule-machine" ref="machineSelect" class="select select-sm w-full" @change="setMachine"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === draft.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select></div>
+            <div><label for="rule-environment" class="mb-2 block text-xs font-medium">代理环境</label><select id="rule-environment" v-model="draft.environment" class="select select-sm w-full"><option v-for="(environment, value) in ENVIRONMENTS" :key="value" :value="value">{{ environment.label }}</option></select></div>
+            <div v-if="draft.environment === 'local'"><label for="rule-port" class="mb-2 block text-xs font-medium">本地端口</label><input id="rule-port" v-model.number="draft.port" class="input input-sm w-full" type="number" min="1" max="65535" step="1" required /></div>
+            <div v-else><label for="rule-machine" class="mb-2 block text-xs font-medium">测试机</label><select id="rule-machine" ref="machineSelect" class="select select-sm w-full" @change="setMachine"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === draft.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select></div>
           </div>
           <button
             type="button"

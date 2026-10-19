@@ -1,6 +1,6 @@
 <script setup lang="ts" vapor>
 import { nextTick, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue';
-import type { Environment, ProxyRule } from '../rule-config';
+import { ENVIRONMENTS, type Environment, type ProxyRule } from '../rule-config';
 
 const props = defineProps<{ rules: ProxyRule[]; machines: string[]; disabled: boolean }>();
 const emit = defineEmits<{
@@ -92,7 +92,20 @@ function toggleEnabled(index: number) {
 
 function setEnvironment(index: number, event: Event) {
   const rule = props.rules[index];
-  if (rule && !props.disabled) emit('change', index, { ...rule, environment: (event.target as HTMLSelectElement).value as Environment });
+  if (!rule || props.disabled) return;
+  const environment = (event.target as HTMLSelectElement).value as Environment;
+  emit('change', index, { ...rule, environment, port: rule.port ?? 8000, machine: rule.machine || props.machines[0] || '' });
+}
+
+function setPort(index: number, event: Event) {
+  const rule = props.rules[index];
+  if (!rule || props.disabled) return;
+  const input = event.target as HTMLInputElement;
+  if (!input.reportValidity()) {
+    input.value = String(rule.port);
+    return;
+  }
+  emit('change', index, { ...rule, port: input.valueAsNumber });
 }
 
 function setMachine(index: number, event: Event) {
@@ -122,7 +135,7 @@ async function removeRule(index: number) {
     <table ref="table" class="table w-full table-fixed" aria-label="代理规则配置">
       <colgroup><col class="w-[48px]" /><col class="w-[112px]" /><col class="w-[144px]" /><col /><col class="w-[156px]" /><col class="w-[205px]" /><col class="w-[152px]" /></colgroup>
       <thead class="text-xs font-normal text-base-content/75">
-        <tr><th class="px-2 py-3 font-normal"><span class="sr-only">排序</span></th><th class="px-2 font-normal">状态</th><th class="font-normal">名称</th><th class="font-normal">请求匹配规则</th><th class="font-normal">代理环境</th><th class="font-normal">测试机</th><th class="pr-5 text-right font-normal">操作</th></tr>
+        <tr><th class="px-2 py-3 font-normal"><span class="sr-only">排序</span></th><th class="px-2 font-normal">状态</th><th class="font-normal">名称</th><th class="font-normal">请求匹配规则</th><th class="font-normal">代理环境</th><th class="font-normal">测试机 / 本地端口</th><th class="pr-5 text-right font-normal">操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="(rule, index) in rules" :key="index" :data-rule-index="index" class="border-base-300/70" :class="{ 'outline-2 -outline-offset-2 outline-primary': dropIndex === index && draggedIndex !== index }">
@@ -140,8 +153,11 @@ async function removeRule(index: number) {
           </td>
           <td class="break-words py-4 align-middle text-xs" :class="{ 'text-base-content/75': !rule.enabled }">{{ rule.name }}</td>
           <td class="py-4 align-middle"><div class="space-y-0.5" :class="{ 'text-base-content/75': !rule.enabled }"><code v-for="pattern in rule.patterns" :key="pattern" class="block break-all font-mono text-[11px] leading-[1.7]">{{ pattern }}</code></div></td>
-          <td class="py-4 align-middle"><select class="select select-sm w-full bg-base-100 text-xs" :value="rule.environment" :disabled="disabled" :aria-label="`规则 ${index + 1} 的代理环境`" @change="setEnvironment(index, $event)"><option value="test">测试环境</option><option value="sandbox">沙箱环境</option></select></td>
-          <td class="py-4 align-middle"><select class="select select-sm w-full bg-base-100 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的测试机`" @change="setMachine(index, $event)"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === rule.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select></td>
+          <td class="py-4 align-middle"><select class="select select-sm w-full bg-base-100 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的代理环境`" @change="setEnvironment(index, $event)"><option v-for="(environment, value) in ENVIRONMENTS" :key="value" :value="value" :selected="value === rule.environment">{{ environment.label }}</option></select></td>
+          <td class="py-4 align-middle">
+            <input v-if="rule.environment === 'local'" class="input input-sm w-full bg-base-100 text-xs" type="number" min="1" max="65535" step="1" required :value="rule.port" :disabled="disabled" :aria-label="`规则 ${index + 1} 的本地端口`" @change="setPort(index, $event)" />
+            <select v-else class="select select-sm w-full bg-base-100 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的测试机`" @change="setMachine(index, $event)"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === rule.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select>
+          </td>
           <td class="py-4 pr-5 align-middle"><div class="flex justify-end gap-3"><button class="text-xs text-base-content/75 hover:underline disabled:opacity-40" :disabled="disabled" :aria-label="`复制规则 ${index + 1}`" @click="emit('copy', index)">复制</button><button class="text-xs text-base-content/75 hover:underline disabled:opacity-40" :disabled="disabled" :aria-label="`编辑规则 ${index + 1}`" @click="emit('edit', index)">编辑</button><button data-remove class="text-xs text-base-content/75 hover:text-error disabled:opacity-40" :disabled="disabled" :aria-label="`删除规则 ${index + 1}`" @click="removeRule(index)">删除</button></div></td>
         </tr>
         <tr v-if="!rules.length"><td colspan="7" class="py-12 text-center text-sm text-base-content/75">还没有规则，点击“新增规则”开始配置。</td></tr>

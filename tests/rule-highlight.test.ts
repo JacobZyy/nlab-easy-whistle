@@ -17,6 +17,17 @@ describe('规则文本高亮', () => {
     ]);
   });
 
+  it.each(['', ' reqHeaders://{"Global-Route-Tag":"jacobzy"}'])('带端口本地地址保持高亮和原文：%s', (header) => {
+    const text = `host://127.0.0.1:8000 */u/nlab-manage */nlab-manage${header}`;
+    const tokens = tokenizeRule(text);
+    expect(tokens.slice(0, 2)).toEqual([
+      { text: 'host://', kind: 'operator' },
+      { text: '127.0.0.1:8000', kind: 'address' },
+    ]);
+    expect(tokens.map((token) => token.text).join('')).toBe(text);
+    expect(tokenizeRule(`# ${text}`)).toEqual([{ text: `# ${text}`, kind: 'comment' }]);
+  });
+
   it('禁用规则整行作为注释，空文本返回空数组', () => {
     const comment = '# host://10.9.31.195 */merchant reqHeaders://{"Global-Route-Tag":"sandboxjacobzy"}';
     expect(tokenizeRule(comment)).toEqual([{ text: comment, kind: 'comment' }]);

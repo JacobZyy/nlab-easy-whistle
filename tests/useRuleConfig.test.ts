@@ -8,6 +8,25 @@ const PROTOTYPE_KEY = 'nlab-easy-whistle-desktop-prototype-v2';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('本地记忆', () => {
+  it('本地环境自定义端口保存后可重新读取', async () => {
+    const saved = defaultConfig();
+    saved.rules = [{ name: '本地管理端', enabled: true, patterns: ['*/u/nlab-manage', '*/nlab-manage'], environment: 'local', machine: '', port: 8000 }];
+    const storage = new Map([[KEY, JSON.stringify(saved)]]);
+    vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
+    const warn = vi.fn();
+    const scope = effectScope();
+    const state = scope.run(() => useRuleConfig(warn))!;
+    expect(state.config.value).toEqual(saved);
+    state.config.value.rules[0]!.port = 5173;
+    await nextTick();
+    scope.stop();
+    const reopenedScope = effectScope();
+    const reopened = reopenedScope.run(() => useRuleConfig(warn))!;
+    expect(reopened.config.value.rules[0]).toEqual({ ...saved.rules[0], port: 5173 });
+    expect(warn).not.toHaveBeenCalled();
+    reopenedScope.stop();
+  });
+
   it.each([KEY, PROTOTYPE_KEY])('旧存储缺少名称时读取为空白，修改后记忆名称：%s', async (key) => {
     const saved = defaultConfig();
     const legacy = { ...saved, rules: saved.rules.map(({ name, ...rule }) => rule) };

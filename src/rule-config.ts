@@ -1,6 +1,7 @@
 export const ENVIRONMENTS = {
   test: { label: '测试环境', ip: '192.168.170.88' },
   sandbox: { label: '沙箱环境', ip: '10.9.31.195' },
+  local: { label: '本地环境', ip: '127.0.0.1' },
 } as const;
 
 export type Environment = keyof typeof ENVIRONMENTS;
@@ -10,6 +11,7 @@ export interface ProxyRule {
   patterns: string[];
   environment: Environment;
   machine: string;
+  port?: number;
 }
 export interface RuleConfig {
   version: 1;
@@ -80,18 +82,28 @@ export function normalizeUrl(value: unknown): string {
   return url.href.replace(/\/+$/u, '');
 }
 
+function validatePort(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65535) {
+    throw new Error('本地端口必须是 1–65535 的整数。');
+  }
+  return value;
+}
+
 export function validateRule(value: unknown, machines: string[]): ProxyRule {
   if (!isRecord(value) || typeof value.enabled !== 'boolean' || !Array.isArray(value.patterns)) {
-    throw new Error('每条规则需要 enabled、patterns、environment 和 machine。');
+    throw new Error('每条规则需要 enabled、patterns 和 environment。');
   }
   if (value.name !== undefined && typeof value.name !== 'string') throw new Error('规则名称必须是文本。');
   const name = value.name === undefined ? '' : value.name.trim();
-  if (value.environment !== 'test' && value.environment !== 'sandbox') throw new Error('代理环境仅支持 test 或 sandbox。');
+  if (value.environment !== 'test' && value.environment !== 'sandbox' && value.environment !== 'local') throw new Error('代理环境仅支持 test、sandbox 或 local。');
   const patterns = [...new Set(value.patterns.map(normalizePattern))];
   if (!patterns.length) throw new Error('每条规则至少需要一项请求匹配规则。');
+  if (value.environment === 'local') {
+    return { name, enabled: value.enabled, patterns, environment: value.environment, machine: '', port: validatePort(value.port) };
+  }
   const machine = normalizeMachine(value.machine);
   if (!machines.includes(machine)) throw new Error('规则的测试机必须存在于 machines 列表中。');
-  return { name, enabled: value.enabled, patterns, environment: value.environment, machine };
+  return { name, enabled: value.enabled, patterns, environment: value.environment, machine, ...(value.port === undefined ? {} : { port: validatePort(value.port) }) };
 }
 
 export function validateConfig(value: unknown): RuleConfig {
@@ -111,6 +123,9 @@ export function validateConfig(value: unknown): RuleConfig {
 
 export function generateRules(config: RuleConfig): string {
   return config.rules.map((rule) => {
+    if (rule.environment === 'local') {
+      return `${rule.enabled ? '' : '# '}host://${ENVIRONMENTS.local.ip}:${rule.port} ${rule.patterns.join(' ')}`;
+    }
     // Whistle expands ${name} before parsing header JSON; encode dollars to keep tags literal.
     const header = JSON.stringify({ 'Global-Route-Tag': rule.machine }).replaceAll('$', '\\u0024');
     // An explicit host operator avoids Whistle treating the environment IP as a URL pattern.
