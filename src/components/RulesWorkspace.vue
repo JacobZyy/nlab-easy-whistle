@@ -187,10 +187,10 @@ async function applyRules() {
 </script>
 
 <template>
-  <main class="mx-auto max-w-[1280px] px-8 pt-8 pb-10 antialiased">
-    <header class="mb-6 flex items-center justify-between gap-5 rounded-box border-b-4 border-secondary bg-neutral px-6 py-5 text-neutral-content">
-      <h1 class="flex items-center gap-3 text-xl font-semibold tracking-tight"><img src="/favicon.png" alt="" class="size-9 rounded-field" />NLab Easy Whistle</h1>
-      <div class="flex items-center gap-2">
+  <main class="mx-auto flex h-dvh max-w-[1680px] flex-col gap-3 p-3 pb-24 antialiased sm:p-4 sm:pb-24">
+    <header class="flex shrink-0 flex-col gap-3 rounded-box border-b-4 border-secondary bg-neutral px-4 py-3 text-neutral-content sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="flex items-center gap-3 text-lg font-semibold tracking-tight"><img src="/favicon.png" alt="" class="size-8 rounded-field" />NLab Easy Whistle</h1>
+      <div class="flex flex-wrap items-center gap-2">
         <button class="btn btn-sm bg-base-100 font-normal" :disabled="busy" @click="chooseImport">导入 YAML</button>
         <button class="btn btn-sm bg-base-100 font-normal" :disabled="busy || exporting" @click="exportConfig">导出 YAML</button>
         <button ref="addButton" class="btn btn-secondary btn-sm ml-1 font-semibold" :disabled="busy" aria-haspopup="dialog" @click="openRule()">＋ 新增规则</button>
@@ -198,14 +198,15 @@ async function applyRules() {
       </div>
     </header>
 
-    <RulesTable :rules="config.rules" :machines="config.machines" :disabled="busy" @change="changeRule" @move="moveRule" @edit="openRule" @remove="removeRule" @copy="copyRules" @add-machine="openMachine" />
+    <div class="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-3 min-[1100px]:grid-cols-[640px_minmax(0,1fr)] min-[1100px]:grid-rows-[minmax(0,1fr)]">
+      <RulesTable :rules="config.rules" :machines="config.machines" :disabled="busy" @change="changeRule" @move="moveRule" @edit="openRule" @remove="removeRule" @copy="copyRules" @add-machine="openMachine" />
+      <RulePreview ref="preview" :text="ruleText" @copy="copyRules()" />
+    </div>
 
-    <footer class="mt-5 flex items-center justify-between gap-4 rounded-field bg-base-100/85 px-4 py-3">
-      <button class="btn btn-ghost h-auto min-h-0 p-0 text-xs font-normal text-base-content/75 hover:bg-transparent" :disabled="busy" aria-haspopup="dialog" @click="openConnection">Whistle：<span class="font-mono">{{ config.whistle.url }}</span><span class="ml-1 underline underline-offset-2">设置</span></button>
-      <button class="btn btn-primary btn-sm px-5 font-medium" :disabled="busy" :aria-busy="busy" @click="applyRules">{{ busy ? '应用中…' : '应用' }}</button>
+    <footer class="fixed inset-x-3 bottom-3 z-20 mx-auto flex max-w-[1648px] items-center justify-between gap-3 rounded-field border border-base-300 bg-base-100 px-4 py-3 sm:inset-x-4 sm:bottom-4">
+      <button class="btn btn-ghost h-auto min-h-0 min-w-0 flex-wrap justify-start gap-x-1 gap-y-0 p-0 text-xs font-normal text-base-content/75 hover:bg-transparent" :disabled="busy" aria-haspopup="dialog" @click="openConnection">Whistle：<span class="break-all font-mono">{{ config.whistle.url }}</span><span class="underline underline-offset-2">设置</span></button>
+      <button class="btn btn-primary btn-sm shrink-0 px-6 font-medium" :disabled="busy" :aria-busy="busy" @click="applyRules">{{ busy ? '应用中…' : '应用' }}</button>
     </footer>
-
-    <RulePreview ref="preview" :text="ruleText" @copy="copyRules()" />
   </main>
 
   <RuleEditor ref="ruleEditor" :open="editorOpen" :rule="editedRule" :machines="config.machines" :disabled="busy" @save="saveRule" @close="editorOpen = false" @add-machine="openMachine('editor')" />
@@ -225,7 +226,7 @@ async function applyRules() {
     <form method="dialog" class="modal-backdrop"><button aria-label="关闭导入配置窗口">关闭</button></form>
   </dialog>
 
-  <div v-if="notice" class="toast toast-bottom toast-center z-50" :role="notice.kind === 'error' ? 'alert' : 'status'" :aria-live="notice.kind === 'error' ? 'assertive' : 'polite'">
+  <div v-if="notice" class="toast toast-top toast-center z-50 max-w-full" :role="notice.kind === 'error' ? 'alert' : 'status'" :aria-live="notice.kind === 'error' ? 'assertive' : 'polite'">
     <div class="flex max-w-2xl items-start gap-4 rounded-lg border bg-base-100 px-5 py-3 text-sm shadow-sm" :class="{ 'border-error/30 text-error': notice.kind === 'error', 'border-warning/30 text-base-content': notice.kind === 'warning', 'border-base-300 text-base-content': notice.kind === 'success' }"><p class="whitespace-pre-wrap break-words">{{ notice.message }}</p><button class="shrink-0 px-1 text-base-content/75" aria-label="关闭提示" @click="notice = null">×</button></div>
   </div>
 </template>

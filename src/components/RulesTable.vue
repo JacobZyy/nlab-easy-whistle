@@ -129,38 +129,46 @@ async function removeRule(index: number) {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-lg border border-base-300 backdrop-blur-sm">
+  <div class="min-h-0 min-w-0 overflow-auto overscroll-contain rounded-box border border-base-300 bg-base-100/85 backdrop-blur-sm" tabindex="0" role="region" aria-label="代理规则配置列表">
     <p id="rule-sort-help" class="sr-only">拖动排序手柄调整规则顺序，也可聚焦手柄后按上、下方向键移动。</p>
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
-    <table ref="table" class="table w-full table-fixed" aria-label="代理规则配置">
-      <colgroup><col class="w-[48px]" /><col class="w-[112px]" /><col class="w-[144px]" /><col /><col class="w-[156px]" /><col class="w-[205px]" /><col class="w-[152px]" /></colgroup>
-      <thead class="text-xs font-normal text-base-content/75">
-        <tr><th class="px-2 py-3 font-normal"><span class="sr-only">排序</span></th><th class="px-2 font-normal">状态</th><th class="font-normal">名称</th><th class="font-normal">请求匹配规则</th><th class="font-normal">代理环境</th><th class="font-normal">测试机 / 本地端口</th><th class="pr-5 text-right font-normal">操作</th></tr>
+    <table ref="table" class="table w-full min-w-[600px] table-fixed" aria-label="代理规则配置">
+      <colgroup><col class="w-[32px]" /><col class="w-[60px]" /><col /><col class="w-[256px]" /><col class="w-[96px]" /></colgroup>
+      <thead class="sticky top-0 z-10 bg-base-100 text-xs font-normal text-base-content/75">
+        <tr><th scope="col" class="px-1 py-2 font-normal"><span class="sr-only">排序</span></th><th scope="col" class="px-1 py-2 font-normal">状态</th><th scope="col" class="px-2 py-2 font-normal">名称 / 请求匹配规则</th><th scope="col" class="px-2 py-2 font-normal">代理目标</th><th scope="col" class="px-2 py-2 text-right font-normal">操作</th></tr>
       </thead>
       <tbody>
         <tr v-for="(rule, index) in rules" :key="index" :data-rule-index="index" class="border-base-300/70" :class="{ 'outline-2 -outline-offset-2 outline-primary': dropIndex === index && draggedIndex !== index }">
-          <td class="border-l-4 px-1.5 py-4 align-middle" :class="rule.enabled ? 'border-l-success' : 'border-l-neutral'">
-            <button type="button" data-drag-handle class="btn btn-ghost btn-sm btn-square touch-none select-none [-webkit-user-select:none] text-base-content/70" :class="draggedIndex === index ? 'cursor-grabbing bg-base-300' : 'cursor-grab'" :disabled="disabled || rules.length < 2" :aria-label="`调整规则 ${index + 1} 的顺序：${rule.name || rule.patterns[0]}，拖动或按上、下方向键排序`" aria-describedby="rule-sort-help" title="拖动排序，或按上、下方向键移动" @pointerdown="startDrag(index, $event)" @pointermove="dragOver" @pointerup="finishDrag" @pointercancel="cancelDrag" @lostpointercapture="cancelDrag" @keydown="moveWithKeyboard(index, $event)">
+          <td class="border-l-4 px-0 py-1.5 align-middle" :class="rule.enabled ? 'border-l-success' : 'border-l-neutral'">
+            <button type="button" data-drag-handle class="btn btn-ghost btn-xs btn-square touch-none select-none [-webkit-user-select:none] text-base-content/70" :class="draggedIndex === index ? 'cursor-grabbing bg-base-300' : 'cursor-grab'" :disabled="disabled || rules.length < 2" :aria-label="`调整规则 ${index + 1} 的顺序：${rule.name || rule.patterns[0]}，拖动或按上、下方向键排序`" aria-describedby="rule-sort-help" title="拖动排序，或按上、下方向键移动" @pointerdown="startDrag(index, $event)" @pointermove="dragOver" @pointerup="finishDrag" @pointercancel="cancelDrag" @lostpointercapture="cancelDrag" @keydown="moveWithKeyboard(index, $event)">
               <svg aria-hidden="true" viewBox="0 0 16 20" class="h-5 w-4 fill-current"><circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" /><circle cx="5" cy="10" r="1.5" /><circle cx="11" cy="10" r="1.5" /><circle cx="5" cy="16" r="1.5" /><circle cx="11" cy="16" r="1.5" /></svg>
             </button>
           </td>
-          <td class="px-2 py-4 align-middle">
-            <button type="button" class="btn btn-sm min-w-24 gap-2 font-semibold" :class="rule.enabled ? 'btn-success' : 'btn-neutral'" :disabled="disabled" :aria-pressed="rule.enabled" :aria-label="`启用规则 ${index + 1}：${rule.patterns[0]}`" :title="rule.enabled ? '点击禁用' : '点击启用'" @click="toggleEnabled(index)">
-              <svg v-if="rule.enabled" aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 fill-none stroke-current" stroke-width="2.5"><path d="m3 8 3 3 7-7" /></svg>
-              <svg v-else aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 fill-current"><rect x="4" y="3" width="3" height="10" rx="1" /><rect x="9" y="3" width="3" height="10" rx="1" /></svg>
-              {{ rule.enabled ? '已启用' : '已禁用' }}
+          <td class="px-1 py-1.5 text-center align-middle">
+            <button type="button" class="btn btn-xs btn-square" :class="rule.enabled ? 'btn-success' : 'btn-neutral'" :disabled="disabled" :aria-pressed="rule.enabled" :aria-label="`启用规则 ${index + 1}：${rule.patterns[0]}`" :title="rule.enabled ? '已启用，点击禁用' : '已禁用，点击启用'" @click="toggleEnabled(index)">
+              <svg v-if="rule.enabled" aria-hidden="true" viewBox="0 0 16 16" class="size-3.5 fill-none stroke-current" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 3 3 7-7" /></svg>
+              <svg v-else aria-hidden="true" viewBox="0 0 16 16" class="size-3.5 fill-current"><rect x="4" y="3" width="3" height="10" rx="1" /><rect x="9" y="3" width="3" height="10" rx="1" /></svg>
             </button>
           </td>
-          <td class="break-words py-4 align-middle text-xs" :class="{ 'text-base-content/75': !rule.enabled }">{{ rule.name }}</td>
-          <td class="py-4 align-middle"><div class="space-y-0.5" :class="{ 'text-base-content/75': !rule.enabled }"><code v-for="pattern in rule.patterns" :key="pattern" class="block break-all font-mono text-[11px] leading-[1.7]">{{ pattern }}</code></div></td>
-          <td class="py-4 align-middle"><select class="select select-sm w-full bg-base-100 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的代理环境`" @change="setEnvironment(index, $event)"><option v-for="(environment, value) in ENVIRONMENTS" :key="value" :value="value" :selected="value === rule.environment">{{ environment.label }}</option></select></td>
-          <td class="py-4 align-middle">
-            <input v-if="rule.environment === 'local'" class="input input-sm w-full bg-base-100 text-xs" type="number" min="1" max="65535" step="1" required :value="rule.port" :disabled="disabled" :aria-label="`规则 ${index + 1} 的本地端口`" @change="setPort(index, $event)" />
-            <select v-else class="select select-sm w-full bg-base-100 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的测试机`" @change="setMachine(index, $event)"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === rule.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select>
+          <td class="px-2 py-1.5 align-middle">
+            <div class="min-w-0 space-y-0.5" :class="{ 'text-base-content/75': !rule.enabled }"><p v-if="rule.name" class="break-words text-xs leading-4 font-medium">{{ rule.name }}</p><code v-for="pattern in rule.patterns" :key="pattern" class="block break-all font-mono text-[11px] leading-4">{{ pattern }}</code></div>
           </td>
-          <td class="py-4 pr-5 align-middle"><div class="flex justify-end gap-3"><button class="text-xs text-base-content/75 hover:underline disabled:opacity-40" :disabled="disabled" :aria-label="`复制规则 ${index + 1}`" @click="emit('copy', index)">复制</button><button class="text-xs text-base-content/75 hover:underline disabled:opacity-40" :disabled="disabled" :aria-label="`编辑规则 ${index + 1}`" @click="emit('edit', index)">编辑</button><button data-remove class="text-xs text-base-content/75 hover:text-error disabled:opacity-40" :disabled="disabled" :aria-label="`删除规则 ${index + 1}`" @click="removeRule(index)">删除</button></div></td>
+          <td class="px-2 py-1.5 align-middle">
+            <div class="flex items-center gap-3">
+              <select class="select select-xs h-6 w-[92px] shrink-0 bg-base-100 px-2 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的代理环境`" @change="setEnvironment(index, $event)"><option v-for="(environment, value) in ENVIRONMENTS" :key="value" :value="value" :selected="value === rule.environment">{{ environment.label }}</option></select>
+              <input v-if="rule.environment === 'local'" class="input input-xs h-6 min-w-0 flex-1 bg-base-100 px-2 text-xs" type="number" min="1" max="65535" step="1" required :value="rule.port" :disabled="disabled" :aria-label="`规则 ${index + 1} 的本地端口`" @change="setPort(index, $event)" />
+              <select v-else class="select select-xs h-6 min-w-0 flex-1 bg-base-100 px-2 text-xs" :disabled="disabled" :aria-label="`规则 ${index + 1} 的测试机`" @change="setMachine(index, $event)"><option v-for="machine in machines" :key="machine" :value="machine" :selected="machine === rule.machine">{{ machine }}</option><option value="">＋ 新增测试机…</option></select>
+            </div>
+          </td>
+          <td class="px-2 py-1.5 align-middle">
+            <div class="flex justify-end gap-1">
+              <button type="button" class="btn btn-ghost btn-xs btn-square text-base-content/75" :disabled="disabled" :aria-label="`复制规则 ${index + 1}`" title="复制规则" @click="emit('copy', index)"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V4H4v12h4" /></svg></button>
+              <button type="button" class="btn btn-ghost btn-xs btn-square text-base-content/75" :disabled="disabled" :aria-label="`编辑规则 ${index + 1}`" title="编辑规则" @click="emit('edit', index)"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15v5Z" /></svg></button>
+              <button type="button" data-remove class="btn btn-ghost btn-xs btn-square text-base-content/75 hover:text-error" :disabled="disabled" :aria-label="`删除规则 ${index + 1}`" title="删除规则" @click="removeRule(index)"><svg aria-hidden="true" viewBox="0 0 24 24" class="size-3.5 fill-none stroke-current" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" /></svg></button>
+            </div>
+          </td>
         </tr>
-        <tr v-if="!rules.length"><td colspan="7" class="py-12 text-center text-sm text-base-content/75">还没有规则，点击“新增规则”开始配置。</td></tr>
+        <tr v-if="!rules.length"><td colspan="5" class="py-12 text-center text-sm text-base-content/75">还没有规则，点击“新增规则”开始配置。</td></tr>
       </tbody>
     </table>
   </div>

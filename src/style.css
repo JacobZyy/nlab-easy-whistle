@@ -46,7 +46,7 @@
 
 @layer base {
   body {
-    min-width: 1120px;
+    min-width: 320px;
     min-height: 100vh;
     background: var(--color-base-200);
     color: var(--color-base-content);
